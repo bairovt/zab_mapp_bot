@@ -24,8 +24,9 @@ const bot = new Bot<MyContext>(conf.bot.token as string);
 
 bot.use(async (ctx, next) => {
 	// topic only
-	const thread_id = ctx.msg?.message_thread_id?.toString();
-	if (thread_id !== conf.message_thread_id) {
+	const threadId = ctx.msg?.message_thread_id;
+	const chatId = ctx.update.message?.chat?.id;
+	if (threadId !== conf.message_thread_id && chatId !== conf.chat_id) {
 		return;
 	}
 
