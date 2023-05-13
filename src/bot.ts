@@ -26,7 +26,7 @@ bot.use(async (ctx, next) => {
 	// topic only
 	const threadId = ctx.msg?.message_thread_id;
 	const chatId = ctx.update.message?.chat?.id;
-	if (threadId !== conf.message_thread_id && chatId !== conf.chat_id) {
+	if (threadId !== conf.message_thread_id || chatId !== conf.chat_id) {
 		return;
 	}
 
