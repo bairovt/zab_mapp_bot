@@ -68,7 +68,7 @@ bot.on(':is_topic_message', async (ctx, next) => {
 		for (let i=0; i<3; i++) {
 			// todo: last truck number?
 			if (!isValidTruckNumber(truckNumsArr[i])) {
-				let invalidNumberMsg = `${truckNumsArr[i]} - некорректный номер. Сообщение будет удалено через 5 сек.`;
+				let invalidNumberMsg = `${truckNumsArr[i]} - некорректный номер.`;
 				return await resp400(invalidNumberMsg, ctx, true);
 			}
 		}
@@ -96,7 +96,7 @@ bot.on(':is_topic_message', async (ctx, next) => {
 			// на случай одновременной записи / index conflict
 			if (err instanceof ArangoError && err.code === 409) {
 				const newConflict = await db.collection('Conflicts').save({ recordDto }, {returnNew: true});
-				return await resp400(`Conflict ${newConflict}`, ctx, false);
+				return await resp400(`Конфликт (${newConflict._key})`, ctx, false);
 			}
 			throw err;
 		}
@@ -149,7 +149,7 @@ bot.catch(async (err) => {
 async function main() {
 	await dbEnsureCollections();
 
-	// await dbEnsureIndexes();
+	await dbEnsureIndexes();
 
 	// await bot.api.setMyCommands([
 	// 	{ command: 'enter', description: 'Записаться в очередь' },

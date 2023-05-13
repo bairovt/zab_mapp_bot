@@ -46,14 +46,14 @@ export async function dbEnsureIndexes(): Promise<void> {
 	await db.collection('LiveRecs').ensureIndex({
 		type: 'persistent',
 		fields: ['mapp', 'truck', 'status'],
-		name: 'idx-LiveRecs-mapp-front-status',
+		name: 'idx-LiveRecs-mapp-truck-status',
 		unique: true,
 	});
 
 	await db.collection('LiveRecs').ensureIndex({
 		type: 'persistent',
 		fields: ['mapp', 'back', 'status'],
-		name: 'idx-LiveRecs-mapp-front-status',
+		name: 'idx-LiveRecs-mapp-back-status',
 		unique: true,
 	});
 
