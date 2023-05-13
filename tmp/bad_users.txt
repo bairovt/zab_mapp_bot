@@ -1,0 +1,83 @@
+from.id
+
+628599026		Good morning	3
+
+5634186302		спецтех		4
+
+2112280455		Владимир	4
+
+316636578		Bobur Chulievich
+
+393996220		Cphinn		5
+
+
+{
+  "error": {
+    "method": "sendMessage",
+    "payload": {
+      "chat_id": 5634186302,
+      "text": "Укажите корректный гос. номер тягача в формате: <b>А555ВЕ123</b>",
+      "reply_markup": {
+        "remove_keyboard": true
+      },
+      "parse_mode": "HTML"
+    },
+    "ok": false,
+    "name": "GrammyError",
+    "error_code": 403,
+    "description": "Forbidden: bot was blocked by the user",
+    "parameters": {}
+  },
+  "ctx": {
+    "update": {
+      "update_id": 936998863,
+      "message": {
+        "message_id": 11453,
+        "from": {
+          "id": 5634186302,
+          "is_bot": false,
+          "first_name": "спецтех",
+          "language_code": "ru"
+        },
+        "chat": {
+          "id": 5634186302,
+          "first_name": "спецтех",
+          "type": "private"
+        },
+        "date": 1683693931,
+        "text": "/enter",
+        "entities": [
+          {
+            "offset": 0,
+            "length": 6,
+            "type": "bot_command"
+          }
+        ]
+      }
+    },
+    "api": {
+      "raw": {},
+      "config": {}
+    },
+    "me": {
+      "id": 6262858218,
+      "is_bot": true,
+      "first_name": "ZabmappBot",
+      "username": "ZabMappBot",
+      "can_join_groups": true,
+      "can_read_all_group_messages": false,
+      "supports_inline_queries": false
+    },
+    "session": {
+      "step": "truck",
+      "record": {
+        "mapp": "Zab",
+        "truck": "",
+        "infront": "",
+        "inn": ""
+      }
+    },
+    "match": ""
+  },
+  "name": "BotError"
+}
