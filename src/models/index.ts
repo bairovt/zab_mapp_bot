@@ -1,4 +1,5 @@
 export * from './db'
 export * from './User'
 export * from './Log'
+export * from './LiveRec'
 export * from './Record'

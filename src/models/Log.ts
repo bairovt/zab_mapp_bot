@@ -7,10 +7,10 @@ interface ILog {
 	// error?: unknown;
 }
 
-export class Log {
-	static readonly collection = db.collection('Logs');
+export class Log_ {
+	static readonly collection = db.collection('Logs_');
 
 	static async create(log: ILog) {
-		await Log.collection.save(log); // , { returnNew: true, overwriteMode: 'update' });
+		await Log_.collection.save(log); // , { returnNew: true, overwriteMode: 'update' });
 	}
 }

@@ -9,9 +9,11 @@ export enum txt {
 
 	record_not_found = 'Запись не найдена',
 
-	limit = 'Лимит на 5 актиных записей достигнут',
+	// limit = 'Лимит на 5 актиных записей достигнут',
 
-	info = `info`,
+	info = `Информация`,
+
+	incorrectMessage = `Некоректные данные`,
 
 	start_info = `Это сервисный бот группы @zab_mapp`,
 

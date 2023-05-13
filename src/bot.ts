@@ -1,11 +1,11 @@
 import { Bot, GrammyError, HttpError, BotError, session } from 'grammy';
 import conf from './config/config';
-import { User_, Log, Record, Mapps, db, dbEnsureIndexes, dbEnsureCollections, TMapp } from './models';
+import { User_, Log_, db, dbEnsureIndexes, dbEnsureCollections} from './models'; // Mapps, TMapp
 import { User as TUser, Contact } from '@grammyjs/types';
-import {
-	recordInfo,
-	checkRecordInfo,
-} from './helpers';
+// import {
+// 	recordInfo,
+// 	checkRecordInfo,
+// } from './helpers';
 import { MyContext, initialSessionData } from './context';
 import { Router } from '@grammyjs/router';
 import { isNotModifiedError } from './utils';
@@ -14,7 +14,7 @@ import { getMappsKb, getRecordKb, confirmKB, confirmKBTxt } from './keyboards';
 import { InlineKeyboard } from 'grammy';
 // import {isArangoError} from 'arangojs';
 import { ArangoError } from "arangojs/error";
-import { IRecord, ITruck } from './models/Record';
+import { ILiveRec, LiveRec } from './models/LiveRec';
 // import { truckExistsTxt } from './txt/dynamic';
 
 
@@ -23,25 +23,84 @@ if (!conf.nodeEnv) throw new Error('NODE_ENV is not set');
 const bot = new Bot<MyContext>(conf.bot.token as string);
 
 bot.use(async (ctx, next) => {
-	await Log.create({ update: ctx.update });
+	await Log_.create({ update: ctx.update });
+	if (!ctx.msg?.text) throw new Error('No text in message');
 	await next();
 });
+
+async function checkTruckNumber(ctx: MyContext, next: () => Promise<void>) {
+	const truckNumber = ctx.message?.text?.toLocaleUpperCase();
+}
+
+async function resp400(message: string, ctx: MyContext, delMsg: boolean) {
+	// reply to message
+	await ctx.api.sendMessage(ctx.chat?.id as number, message, {
+		reply_to_message_id: ctx.msg?.message_id,
+		parse_mode: 'HTML',
+	});
+	// if (delMsg) {
+	// 	// delete message after 5 seconds if it's not valid truck numbers
+	// 	setTimeout(async () => {
+	// 		// const msg = await ctx.api.getMessage(ctx.chat?.id as number, ctx.msg?.message_id as number);
+	// 		await ctx.api.deleteMessage(ctx.chat?.id as number, ctx.msg?.message_id as number);
+	// 	}, 5000);
+	// }
+}
+
+function isValidTruckNumber(number: string) {
+	return /^[АВЕКМНОРСТУХ]\d{3}[АВЕКМНОРСТУХ]{2}\d{2,3}$/.test(number);
+}
 
 bot.on(':is_topic_message', async (ctx, next) => {
 	// ignore service and anonymous admin messages
 	if (ctx.msg.from?.is_bot && ctx.msg.from?.username === 'GroupAnonymousBot') return;
 
-	// reply to message
-	await ctx.api.sendMessage(ctx.chat?.id as number, txt.info + ': ' + ctx.msg.text, {
-		reply_to_message_id: ctx.msg?.message_id,
-	});
+	let truckNumbersTxt = ctx.message?.text?.toLocaleUpperCase();
 
-	// delete message after 5 seconds if it's not valid truck numbers
-	setTimeout(async () => {
-		// const msg = await ctx.api.getMessage(ctx.chat?.id as number, ctx.msg?.message_id as number);
-		await ctx.api.deleteMessage(ctx.chat?.id as number, ctx.msg?.message_id as number);
-	}, 5000);
-
+	if (!truckNumbersTxt) {
+		return await resp400(txt.incorrectMessage, ctx, true);
+	} else {
+		truckNumbersTxt = truckNumbersTxt.replace(/\s/g, '');
+		const truckNumsArr = truckNumbersTxt.split(',');
+		if (truckNumsArr.length !== 3) {
+			return await resp400(txt.incorrectMessage, ctx, true);
+		}
+		for (let i=0; i<3; i++) {
+			// todo: last truck number?
+			if (!isValidTruckNumber(truckNumsArr[i])) {
+				let invalidNumberMsg = `${truckNumsArr[i]} - некорректный номер. Сообщение будет удалено через 5 сек.`;
+				return await resp400(invalidNumberMsg, ctx, true);
+			}
+		}
+		const timestamp =  Date.now();
+		const recordDto: ILiveRec = {
+			mapp: 'Zab',
+			front: truckNumsArr[0],
+			truck: truckNumsArr[1],
+			back: truckNumsArr[2],
+			from: ctx.msg.from as TUser,
+			timestamp,
+			created_at: new Date(timestamp),
+			status: 'ON'
+		};
+		let liveRec: ILiveRec;
+		try {
+			liveRec = await LiveRec.create(recordDto);
+			// reply to message
+			await ctx.api.sendMessage(ctx.chat?.id as number, `Сохранено (${liveRec._key})`, {
+				reply_to_message_id: ctx.msg?.message_id,
+				parse_mode: 'HTML',
+			});
+		} catch (err) {
+			console.error(err);
+			// на случай одновременной записи / index conflict
+			if (err instanceof ArangoError && err.code === 409) {
+				const newConflict = await db.collection('Conflicts').save({ recordDto }, {returnNew: true});
+				return await resp400(`Conflict ${newConflict}`, ctx, false);
+			}
+			throw err;
+		}
+	}
 });
 
 bot.command('start', async (ctx) => {
@@ -67,7 +126,7 @@ bot.use(async (ctx, next) => {
 
 bot.catch(async (err) => {
 	try {
-		await db.collection('ErrorsLog').save(err);
+		await db.collection('Errors_').save(err);
 
 		const ctx = err.ctx;
 		console.error(`Error while handling update ${ctx.update.update_id}:`);
