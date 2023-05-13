@@ -24,3 +24,5 @@ npm-debug.log
 build/
 
 # npm lock files
+
+pm2.config.js
