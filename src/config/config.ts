@@ -25,6 +25,7 @@ interface IConf {
 	// allowedUsers: number[];
 
 	// siteUrl: string;
+	message_thread_id: string | undefined
 }
 
 const conf: IConf = {
@@ -47,6 +48,7 @@ const conf: IConf = {
 	// allowedUsers: JSON.parse(process.env.ALLOWED_USERS as string) as number[],
 
 	// siteUrl: process.env.SITE_URL as string,
+	message_thread_id: process.env.MESSAGE_THREAD_ID
 };
 
 export default conf;

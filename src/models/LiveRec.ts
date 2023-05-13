@@ -4,6 +4,7 @@ import { MyContext } from '../context';
 import { User as TUser, Contact } from '@grammyjs/types';
 import conf from '../config/config';
 import { Mapps, TMapp } from './mapp';
+import { ArangoError } from "arangojs/error";
 
 
 // export type TStatus = 'ENTERED' | 'MOVED' | 'EXITED' | 'FINISHED' | 'DELETED';
@@ -34,6 +35,7 @@ export interface ILiveRec {
 	// moved_at?: Date;
 	// moved_reason?: string;
 	// moved_by?: number; // tg user id
+	conflict?: string;
 }
 export interface ILiveRec {
 	mapp: TMapp;
@@ -56,15 +58,56 @@ export class LiveRec {
 		return truck;
 	}
 
+	static async findTruckInLive(example: ILiveRec): Promise<ILiveRec> {
+		const truck = await db
+			.query(
+				aql`
+		FOR rec IN LiveRecs
+		FILTER rec.truck == ${example.truck}
+		RETURN rec`
+			)
+			.then((cursor) => cursor.next());
+		return truck;
+	}
+	static async findFrontInLive(example: ILiveRec): Promise<ILiveRec> {
+		const front = await db
+			.query(
+				aql`
+		FOR rec IN LiveRecs
+		FILTER rec.front == ${example.front}
+		RETURN rec`
+			)
+			.then((cursor) => cursor.next());
+		return front;
+	}
+	static async findBackInLive(example: ILiveRec): Promise<ILiveRec> {
+		const back = await db
+			.query(
+				aql`
+		FOR rec IN LiveRecs
+		FILTER rec.back == ${example.back}
+		RETURN rec`
+			)
+			.then((cursor) => cursor.next());
+		return back;
+	}
+
 	static async create(liveRecData: ILiveRec): Promise<ILiveRec> {
-		let recMeta;
-		try {
-			recMeta = await LiveRec.collection.save(liveRecData, { returnNew: true });
-			return recMeta.new;
-		} catch (err) {
-			console.error(err);
-			throw err;
+		const existionFront = await LiveRec.findFrontInLive(liveRecData);
+		if (existionFront) {
+			throw new Error(`front_conflict`);
 		}
+		const existionTruck = await LiveRec.findTruckInLive(liveRecData);
+		if (existionTruck) {
+			throw new Error(`truck_conflict`);
+		}
+		const existionBack = await LiveRec.findBackInLive(liveRecData);
+		if (existionBack) {
+			throw new Error(`back_conflict`);
+		}
+
+		let recMeta = await LiveRec.collection.save(liveRecData, { returnNew: true });
+		return recMeta.new;
 	}
 
 	static async exit(truck: ILiveRec): Promise<void> {

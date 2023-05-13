@@ -23,6 +23,12 @@ if (!conf.nodeEnv) throw new Error('NODE_ENV is not set');
 const bot = new Bot<MyContext>(conf.bot.token as string);
 
 bot.use(async (ctx, next) => {
+	// topic only
+	const thread_id = ctx.msg?.message_thread_id?.toString();
+	if (thread_id !== conf.message_thread_id) {
+		return;
+	}
+
 	await Log_.create({ update: ctx.update });
 	if (!ctx.msg?.text) throw new Error('No text in message');
 	await next();
@@ -87,17 +93,34 @@ bot.on(':is_topic_message', async (ctx, next) => {
 		try {
 			liveRec = await LiveRec.create(recordDto);
 			// reply to message
-			await ctx.api.sendMessage(ctx.chat?.id as number, `Сохранено (${liveRec._key})`, {
+			await ctx.api.sendMessage(ctx.chat?.id as number, `Успешно сохранено (${liveRec._key})`, {
 				reply_to_message_id: ctx.msg?.message_id,
 				parse_mode: 'HTML',
 			});
-		} catch (err) {
+		} catch (err: any) {
 			console.error(err);
 			// на случай одновременной записи / index conflict
-			if (err instanceof ArangoError && err.code === 409) {
+			if (err?.message === 'front_conflict' || err?.message === 'truck_conflict' || err?.message === 'back_conflict') {
+				let conflictMsg;
+				switch (err.message) {
+					case 'front_conflict':
+						conflictMsg = ` ${recordDto.front} уже записан перед другим тягачом!`;
+						break;
+					case 'truck_conflict':
+						conflictMsg = ` ${recordDto.truck} уже записан в очередь!`;
+						break;
+					case 'back_conflict':
+						conflictMsg = ` ${recordDto.back} уже записан за другим тягачом!`;
+						break;
+					default:
+						conflictMsg = err.message;
+				}
+
+				recordDto.conflict = err.message;
 				const newConflict = await db.collection('Conflicts').save({ recordDto }, {returnNew: true});
-				return await resp400(`Конфликт (${newConflict._key})`, ctx, false);
+				return await resp400(`${conflictMsg} (${newConflict._key})`, ctx, false);
 			}
+			if (err instanceof ArangoError && err.code === 409) return await resp400(`Такая комбинация уже существует`, ctx, false);
 			throw err;
 		}
 	}
