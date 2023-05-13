@@ -29,7 +29,7 @@ bot.use(async (ctx, next) => {
 	if (threadId !== conf.message_thread_id || chatId !== conf.chat_id) {
 		return;
 	}
-
+	// here we can be sure that the message is in the topic - avoid flooding
 	await Log_.create({ update: ctx.update });
 	if (!ctx.msg?.text) throw new Error('No text in message');
 	await next();
