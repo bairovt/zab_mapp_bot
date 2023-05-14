@@ -22,6 +22,13 @@ if (!conf.nodeEnv) throw new Error('NODE_ENV is not set');
 
 const bot = new Bot<MyContext>(conf.bot.token as string);
 
+bot.command('start', async (ctx) => {
+	await User_.start(ctx, ctx.msg?.from as TUser);
+	await ctx.reply(txt.info, {
+		reply_markup: { remove_keyboard: true },
+	});
+});
+
 bot.use(async (ctx, next) => {
 	// topic only
 	const threadId = ctx.msg?.message_thread_id;
@@ -34,10 +41,6 @@ bot.use(async (ctx, next) => {
 	if (!ctx.msg?.text) throw new Error('No text in message');
 	await next();
 });
-
-async function checkTruckNumber(ctx: MyContext, next: () => Promise<void>) {
-	const truckNumber = ctx.message?.text?.toLocaleUpperCase();
-}
 
 async function resp400(message: string, ctx: MyContext, delMsg: boolean) {
 	// reply to message
